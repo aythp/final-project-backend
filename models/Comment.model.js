@@ -19,6 +19,10 @@ const commentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Series",
     },
+    post: {
+      type: Schema.Types.ObjectId,
+      ref: "Post",
+    },
   },
   {
     timestamps: true,
