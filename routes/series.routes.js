@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Series = require("../models/Series.model");
+const Status = require("../models/Status.model");
+const Comment = require("../models/Comment.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const axios = require("axios");
 
@@ -31,6 +33,7 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
         startDate: tmdbSeries.first_air_date,
         endDate: tmdbSeries.last_air_date,
         genre: tmdbSeries.genre_ids,
+        poster: `https://image.tmdb.org/t/p/w500${tmdbSeries.poster_path}`,
       });
       await series.save();
     }
@@ -41,4 +44,24 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
   }
 });
 
+router.delete("/series/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const deletedSeries = await Series.findByIdAndDelete(id);
+  
+      if (!deletedSeries) {
+        return res.status(404).json({ message: "Serie no encontrada" });
+      }
+  
+      await Status.deleteMany({ series: id });
+  
+      await Comment.deleteMany({ series: id });
+  
+      res.json({ message: "Serie y datos relacionados eliminados correctamente" });
+    } catch (error) {
+      console.error("Error eliminando la serie:", error);
+      res.status(500).json({ message: "Error eliminando la serie", error });
+    }
+  });
 module.exports = router;

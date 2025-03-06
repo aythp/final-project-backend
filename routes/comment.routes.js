@@ -30,4 +30,40 @@ router.get("/comments", isAuthenticated, async (req, res) => {
   }
 });
 
+router.delete("/comments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const deletedComment = await Comment.findByIdAndDelete(id);
+  
+      if (!deletedComment) {
+        return res.status(404).json({ message: "Comentario no encontrado" });
+      }
+  
+      res.json({ message: "Comentario eliminado correctamente" });
+    } catch (error) {
+      res.status(500).json({ message: "Error eliminando el comentario", error });
+    }
+  });
+
+router.put("/comments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+  
+      const updatedComment = await Comment.findByIdAndUpdate(
+        id,
+        { content },
+        { new: true } // Devuelve el documento actualizado
+      );
+  
+      if (!updatedComment) {
+        return res.status(404).json({ message: "Comentario no encontrado" });
+      }
+  
+      res.json(updatedComment);
+    } catch (error) {
+      res.status(500).json({ message: "Error actualizando el comentario", error });
+    }
+  });
 module.exports = router;

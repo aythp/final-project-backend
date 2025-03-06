@@ -17,13 +17,23 @@ const statusSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["favorite", "pending", "watched"],
-      default: "pending",
+      enum: ["favorite", "pending", "watched"], // Estados permitidos
+      default: "pending", // Estado por defecto
     },
   },
   {
     timestamps: true,
   }
 );
+
+statusSchema.pre("validate", function (next) {
+  if (!this.movie && !this.series) {
+    this.invalidate("movie", "Debe proporcionar una película o una serie");
+  }
+  if (this.movie && this.series) {
+    this.invalidate("movie", "No puede proporcionar una película y una serie al mismo tiempo");
+  }
+  next();
+});
 
 module.exports = model("Status", statusSchema);

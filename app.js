@@ -19,7 +19,7 @@ const indexRoutes = require("./routes/index.routes");
 const movieRoutes = require("./routes/movie.routes");
 const seriesRoutes = require("./routes/series.routes");
 const commentRoutes = require("./routes/comment.routes");
-const favoriteRoutes = require("./routes/status.routes");
+const statusRoutes = require("./routes/status.routes");
 
 app.use("/api", movieRoutes);
 app.use("/api", seriesRoutes);
