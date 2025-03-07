@@ -59,7 +59,7 @@ router.put("/comments/:id", isAuthenticated, async (req, res) => {
       const updatedComment = await Comment.findByIdAndUpdate(
         id,
         { content },
-        { new: true } // Devuelve el documento actualizado
+        { new: true }
       );
   
       if (!updatedComment) {

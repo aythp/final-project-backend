@@ -5,7 +5,6 @@ const seriesSchema = new Schema(
     tmdbId: {
       type: Number,
       required: true,
-      unique: true,
     },
     title: {
       type: String,
@@ -30,10 +29,17 @@ const seriesSchema = new Schema(
       type: String,
       required: true,
     },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    }
   },
   {
     timestamps: true,
   }
 );
+
+seriesSchema.index({tmdbId:1, user: 1})
 
 module.exports = model("Series", seriesSchema);

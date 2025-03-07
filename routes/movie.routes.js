@@ -10,6 +10,7 @@ const axios = require("axios");
 router.post("/movies/search", isAuthenticated, async (req, res) => {
     try {
       const { query } = req.body;
+      const userId = req.payload._id;
   
       const response = await axios.get("https://api.themoviedb.org/3/search/movie", {
         params: {
@@ -24,7 +25,7 @@ router.post("/movies/search", isAuthenticated, async (req, res) => {
         return res.status(404).json({ message: "Película no encontrada" });
       }
   
-      let movie = await Movie.findOne({ tmdbId: tmdbMovie.id });
+      let movie = await Movie.findOne({ tmdbId: tmdbMovie.id, user: userId });
   
       if (!movie) {
         movie = new Movie({
@@ -34,6 +35,7 @@ router.post("/movies/search", isAuthenticated, async (req, res) => {
           releaseDate: tmdbMovie.release_date,
           genre: tmdbMovie.genre_ids,
           poster: `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}`,
+          user: userId
         });
         await movie.save();
       }

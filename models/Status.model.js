@@ -17,8 +17,8 @@ const statusSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["favorite", "pending", "watched"], // Estados permitidos
-      default: "pending", // Estado por defecto
+      enum: ["favorite", "pending", "watched"],
+      default: "pending",
     },
   },
   {

@@ -9,6 +9,7 @@ const axios = require("axios");
 router.post("/series/search", isAuthenticated, async (req, res) => {
   try {
     const { query } = req.body;
+    const userId = req.payload._id;
 
     const response = await axios.get("https://api.themoviedb.org/3/search/tv", {
       params: {
@@ -23,7 +24,7 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Series not found" });
     }
 
-    let series = await Series.findOne({ tmdbId: tmdbSeries.id });
+    let series = await Series.findOne({ tmdbId: tmdbSeries.id, user: this.unlockserId });
     if (!series) {
 
       series = new Series({
@@ -34,6 +35,7 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
         endDate: tmdbSeries.last_air_date,
         genre: tmdbSeries.genre_ids,
         poster: `https://image.tmdb.org/t/p/w500${tmdbSeries.poster_path}`,
+        user: userId
       });
       await series.save();
     }
