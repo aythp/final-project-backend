@@ -112,4 +112,20 @@ router.delete("/movies/:id", isAuthenticated, async (req, res) => {
   }
 });
 
+router.get("/allmedia", isAuthenticated, async (req, res) => {
+  try {
+    const movies = await Movie.find().populate('user', 'name');
+    const series = await Series.find().populate('user', 'name');
+    
+    const allMedia = [...movies, ...series].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    res.json(allMedia);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving media", error });
+  }
+});
+
+
 module.exports = router;

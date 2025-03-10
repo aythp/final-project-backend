@@ -102,4 +102,19 @@ router.delete("/status/:id", isAuthenticated, async (req, res) => {
   }
 });
 
+router.delete("/status/:type/:id", isAuthenticated, async (req, res, next) => {
+  try {
+    const { type, id } = req.params;
+    const query = {};
+    query[type] = id;
+    query.user = req.payload._id;
+
+    await Status.deleteOne(query);
+    
+    res.status(200).json({ message: "Status deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
