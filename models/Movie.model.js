@@ -4,7 +4,7 @@ const movieSchema = new Schema(
   {
     tmdbId: {
       type: Number,
-      required: true
+      required: true,
     },
     title: {
       type: String,
@@ -26,17 +26,37 @@ const movieSchema = new Schema(
       type: String,
       required: true,
     },
+    backdrop: {
+      type: String,
+      default: null, 
+    },
+    rating: {
+      type: Number,
+      default: 0, 
+    },
+    runtime: {
+      type: Number,
+      default: 0, 
+    },
+    cast: {
+      type: [String],
+      default: [],
+    },
+    director: {
+      type: String,
+      default: null,
+    },
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }
+    },
   },
   {
     timestamps: true,
   }
 );
 
-movieSchema.index({ tmdbId: 1, user: 1 });
+movieSchema.index({ tmdbId: 1, user: 1 }, { unique: true });
 
 module.exports = model("Movie", movieSchema);

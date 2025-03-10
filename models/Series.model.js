@@ -20,6 +20,7 @@ const seriesSchema = new Schema(
     },
     endDate: {
       type: Date,
+      default: null,
     },
     genre: {
       type: [String],
@@ -29,17 +30,37 @@ const seriesSchema = new Schema(
       type: String,
       required: true,
     },
+    backdrop: {
+      type: String,
+      default: null,
+    },
+    rating: {
+      type: Number,
+      default: 0,
+    },
+    episodes: {
+      type: Number,
+      default: 0,
+    },
+    seasons: {
+      type: Number,
+      default: 0,
+    },
+    cast: {
+      type: [String],
+      default: [],
+    },
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }
+    },
   },
   {
     timestamps: true,
   }
 );
 
-seriesSchema.index({tmdbId:1, user: 1})
+seriesSchema.index({ tmdbId: 1, user: 1 }, { unique: true });
 
 module.exports = model("Series", seriesSchema);
