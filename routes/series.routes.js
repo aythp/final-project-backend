@@ -14,6 +14,22 @@ router.get("/series", isAuthenticated, async (req, res) => {
   }
 });
 
+router.get("/series/:id", isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const series = await Series.findById(id);
+    
+    if (!series) {
+      return res.status(404).json({ message: "Serie no encontrada" });
+    }
+
+    res.json(series);
+  } catch (error) {
+    console.error("Error obteniendo la serie:", error);
+    res.status(500).json({ message: "Error obteniendo la serie", error });
+  }
+});
+
 router.post("/series/search", isAuthenticated, async (req, res) => {
   try {
     const { query } = req.body;

@@ -15,6 +15,22 @@ router.get("/movies", isAuthenticated, async (req, res) => {
   }
 });
 
+router.get("/movies/:id", isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const movie = await Movie.findById(id);
+    
+    if (!movie) {
+      return res.status(404).json({ message: "Película no encontrada" });
+    }
+
+    res.json(movie);
+  } catch (error) {
+    console.error("Error obteniendo la película:", error);
+    res.status(500).json({ message: "Error obteniendo la película", error });
+  }
+});
+
 router.post("/movies/search", isAuthenticated, async (req, res) => {
   try {
     const { query } = req.body;
