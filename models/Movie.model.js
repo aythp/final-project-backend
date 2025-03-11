@@ -46,6 +46,15 @@ const movieSchema = new Schema(
       type: String,
       default: null,
     },
+    status: {
+      type: String,
+      enum: ['favorite', 'pending', 'viewed'],
+      default: 'pending'
+    },
+    comment: {
+      type: String,
+      default: ''
+    },
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",

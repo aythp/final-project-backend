@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Movie = require("../models/Movie.model");
 const Series = require("../models/Series.model");
-const Status = require("../models/Status.model");
-const Comment = require("../models/Comment.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const axios = require("axios");
 
@@ -90,22 +88,13 @@ router.post("/movies/search", isAuthenticated, async (req, res) => {
 router.delete("/movies/:id", isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const movie = await Movie.findById(id);
-    if (!movie) {
-      console.log("Película no encontrada");
+    const deletedMovie = await Movie.findByIdAndDelete(id);
+    
+    if (!deletedMovie) {
       return res.status(404).json({ message: "Película no encontrada" });
     }
 
-    const deletedStatus = await Status.deleteMany({ movie: id });
-    console.log("Estados eliminados:", deletedStatus);
-
-    const deletedComments = await Comment.deleteMany({ movie: id });
-    console.log("Comentarios eliminados:", deletedComments);
-
-    const deletedMovie = await Movie.findByIdAndDelete(id);
-    console.log("Película eliminada:", deletedMovie);
-
-    res.json({ message: "Película y datos relacionados eliminados correctamente" });
+    res.json({ message: "Película eliminada correctamente" });
   } catch (error) {
     console.error("Error eliminando la película:", error);
     res.status(500).json({ message: "Error eliminando la película", error });
@@ -127,5 +116,50 @@ router.get("/allmedia", isAuthenticated, async (req, res) => {
   }
 });
 
+router.put("/movies/:id/status", isAuthenticated, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['favorite', 'pending', 'viewed'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
+    const updatedMovie = await Movie.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedMovie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+
+    res.json(updatedMovie);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/movies/:id/comment", isAuthenticated, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    const updatedMovie = await Movie.findByIdAndUpdate(
+      id,
+      { comment },
+      { new: true }
+    );
+
+    if (!updatedMovie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+
+    res.json(updatedMovie);
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

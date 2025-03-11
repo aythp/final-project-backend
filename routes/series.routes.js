@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const Series = require("../models/Series.model");
-const Status = require("../models/Status.model");
-const Comment = require("../models/Comment.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const axios = require("axios");
 
@@ -90,21 +88,62 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
 router.delete("/series/:id", isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-
     const deletedSeries = await Series.findByIdAndDelete(id);
 
     if (!deletedSeries) {
       return res.status(404).json({ message: "Serie no encontrada" });
     }
 
-    await Status.deleteMany({ series: id });
-
-    await Comment.deleteMany({ series: id });
-
-    res.json({ message: "Serie y datos relacionados eliminados correctamente" });
+    res.json({ message: "Serie eliminada correctamente" });
   } catch (error) {
     console.error("Error eliminando la serie:", error);
     res.status(500).json({ message: "Error eliminando la serie", error });
+  }
+});
+
+router.put("/series/:id/status", isAuthenticated, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['favorite', 'pending', 'viewed'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
+    const updatedSeries = await Series.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedSeries) {
+      return res.status(404).json({ message: "Series not found" });
+    }
+
+    res.json(updatedSeries);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/series/:id/comment", isAuthenticated, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    const updatedSeries = await Series.findByIdAndUpdate(
+      id,
+      { comment },
+      { new: true }
+    );
+
+    if (!updatedSeries) {
+      return res.status(404).json({ message: "Series not found" });
+    }
+
+    res.json(updatedSeries);
+  } catch (error) {
+    next(error);
   }
 });
 

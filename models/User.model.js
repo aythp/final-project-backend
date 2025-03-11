@@ -18,6 +18,14 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Name is required."],
     },
+    following: [{
+      type: Schema.Types.ObjectId,
+      ref: "User"
+    }],
+    followers: [{
+      type: Schema.Types.ObjectId,
+      ref: "User"
+    }]
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`
