@@ -178,4 +178,19 @@ router.put("/movies/:id/comment", isAuthenticated, async (req, res, next) => {
   }
 });
 
+router.get("/feed", isAuthenticated, async (req, res) => {
+  try {
+    const movies = await Movie.find({ comment: { $ne: "" } }).populate('user', 'name');
+    const series = await Series.find({ comment: { $ne: "" } }).populate('user', 'name');
+    
+    const allMedia = [...movies, ...series].sort((a, b) => 
+      new Date(b.updatedAt) - new Date(a.updatedAt)
+    );
+
+    res.json(allMedia);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving media with comments", error });
+  }
+});
+
 module.exports = router;
