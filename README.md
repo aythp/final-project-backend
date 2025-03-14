@@ -35,40 +35,6 @@ final-project-backend/
 ├── package.json        # Dependencias del proyecto
 └── server.js           # Punto de entrada de la aplicación
 ```
-
-## Instalación
-
-1. Clona el repositorio:
-```bash
-git clone <url-del-repositorio>
-cd final-project-backend
-```
-
-2. Instala las dependencias:
-```bash
-npm install
-```
-
-3. Configura las variables de entorno:
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
-```
-PORT=5005
-ORIGIN=http://localhost:3000
-TOKEN_SECRET=tuTokenSecreto
-MONGODB_URI=mongodb://localhost:27017/nombre-de-tu-base-de-datos
-```
-
-4. Inicia el servidor:
-```bash
-# Modo desarrollo
-npm run dev
-
-# Modo producción
-npm start
-```
-
-## API Endpoints
-
 ### Autenticación
 - `POST /auth/signup`: Registro de usuario
 - `POST /auth/login`: Inicio de sesión
@@ -93,14 +59,6 @@ npm start
 - `GET /api/users/:id`: Obtener detalles de un usuario
 - `PUT /api/users/:id`: Actualizar un usuario
 - `DELETE /api/users/:id`: Eliminar un usuario
-
-## Contribución
-Para contribuir al proyecto, por favor sigue estos pasos:
-1. Haz un fork del repositorio
-2. Crea una rama para tu funcionalidad (`git checkout -b feature/nueva-funcionalidad`)
-3. Haz commit de tus cambios (`git commit -m 'Añadir nueva funcionalidad'`)
-4. Haz push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
 
 ## Licencia
 Este proyecto está bajo la Licencia MIT. 
