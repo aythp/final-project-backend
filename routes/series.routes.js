@@ -3,6 +3,7 @@ const router = express.Router();
 const Series = require("../models/Series.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const axios = require("axios");
+require('dotenv').config();
 
 router.get("/series", isAuthenticated, async (req, res) => {
   try {
@@ -37,7 +38,7 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
 
     const searchResponse = await axios.get("https://api.themoviedb.org/3/search/tv", {
       params: {
-        api_key: "4c2b98d248efaa8035b951b8303b65e7",
+        api_key: process.env.TMDB_API_KEY,
         query: query,
         language: "es-ES",
       },
@@ -53,7 +54,7 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
     if (!series) {
       const detailsResponse = await axios.get(`https://api.themoviedb.org/3/tv/${tmdbSeries.id}`, {
         params: {
-          api_key: "4c2b98d248efaa8035b951b8303b65e7",
+          api_key: process.env.TMDB_API_KEY,
           language: "es-ES",
           append_to_response: "credits",
         },
@@ -63,7 +64,7 @@ router.post("/series/search", isAuthenticated, async (req, res) => {
 
       const genreResponse = await axios.get("https://api.themoviedb.org/3/genre/tv/list", {
         params: {
-          api_key: "4c2b98d248efaa8035b951b8303b65e7",
+          api_key: process.env.TMDB_API_KEY,
           language: "es-ES",
         },
       });
