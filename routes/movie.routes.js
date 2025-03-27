@@ -34,71 +34,75 @@ router.get("/movies/:id", isAuthenticated, async (req, res) => {
 
 router.post("/movies/search", isAuthenticated, async (req, res) => {
   try {
-    const { query } = req.body;
+    console.log('Request body:', req.body);
+    console.log('User ID:', req.payload._id);
+    console.log('TMDB API Key:', process.env.TMDB_API_KEY ? 'Exists' : 'Missing');
+
+    const { query, tmdbId } = req.body;
     const userId = req.payload._id;
 
-    const response = await axios.get("https://api.themoviedb.org/3/search/movie", {
-      params: {
-        api_key: process.env.TMDB_API_KEY,
-        query: query,
-        language: "es-ES",
-      },
-    });
-
-    const tmdbMovie = response.data.results[0];
-    if (!tmdbMovie) {
-      return res.status(404).json({ message: "Película no encontrada" });
+    if (!query || !tmdbId) {
+      return res.status(400).json({ 
+        message: "Se requieren tanto el título como el ID de TMDB" 
+      });
     }
 
-    let movie = await Movie.findOne({ tmdbId: tmdbMovie.id, user: userId });
+    // Primero verifica si la película ya existe
+    let existingMovie = await Movie.findOne({ tmdbId, user: userId });
+    if (existingMovie) {
+      return res.json(existingMovie);
+    }
 
-    if (!movie) {
-      const detailsResponse = await axios.get(`https://api.themoviedb.org/3/movie/${tmdbMovie.id}`, {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: "es-ES",
-          append_to_response: "credits",
-        },
-      });
+    // Si no existe, obtén los detalles directamente usando tmdbId
+    try {
+      const detailsResponse = await axios.get(
+        `https://api.themoviedb.org/3/movie/${tmdbId}`,
+        {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: "es-ES",
+            append_to_response: "credits",
+          },
+        }
+      );
 
-      const { credits, backdrop_path, vote_average, runtime } = detailsResponse.data;
+      const movieData = detailsResponse.data;
+      const { credits, backdrop_path, vote_average, runtime } = movieData;
 
-      const genreResponse = await axios.get("https://api.themoviedb.org/3/genre/movie/list", {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: "es-ES",
-        },
-      });
-
-      const genreMap = genreResponse.data.genres.reduce((map, genre) => {
-        map[genre.id] = genre.name;
-        return map;
-      }, {});
-
-      const genres = tmdbMovie.genre_ids.map((id) => genreMap[id]);
-
-      movie = new Movie({
-        tmdbId: tmdbMovie.id,
-        title: tmdbMovie.title,
-        description: tmdbMovie.overview,
-        releaseDate: new Date(tmdbMovie.release_date),
-        genre: genres,
-        poster: `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}`,
-        backdrop: backdrop_path ? `https://image.tmdb.org/t/p/w1280${backdrop_path}` : null,
+      const newMovie = new Movie({
+        tmdbId,
+        title: movieData.title,
+        description: movieData.overview,
+        releaseDate: new Date(movieData.release_date),
+        genre: movieData.genres.map(g => g.name),
+        poster: movieData.poster_path ? 
+          `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null,
+        backdrop: backdrop_path ? 
+          `https://image.tmdb.org/t/p/w1280${backdrop_path}` : null,
         rating: vote_average,
         runtime: runtime,
         cast: credits.cast.slice(0, 5).map((actor) => actor.name),
         director: credits.crew.find((member) => member.job === "Director")?.name || null,
         user: userId,
+        status: 'pending'
       });
 
-      await movie.save();
+      await newMovie.save();
+      res.json(newMovie);
+    } catch (tmdbError) {
+      console.error("Error con la API de TMDB:", tmdbError);
+      console.log(tmdbError.response?.data || "No response data available")
+      return res.status(500).json({ 
+        message: "Error obteniendo detalles de la película de TMDB",
+        error: tmdbError.message 
+      });
     }
-
-    res.json(movie);
   } catch (error) {
-    console.error("Error buscando película:", error);
-    res.status(500).json({ message: "Error buscando película", error });
+    console.error("Error guardando película:", error);
+    res.status(500).json({ 
+      message: "Error interno del servidor", 
+      error: error.message 
+    });
   }
 });
 

@@ -33,72 +33,73 @@ router.get("/series/:id", isAuthenticated, async (req, res) => {
 
 router.post("/series/search", isAuthenticated, async (req, res) => {
   try {
-    const { query } = req.body;
+    console.log('Request body:', req.body);
+    console.log('User ID:', req.payload._id);
+    console.log('TMDB API Key:', process.env.TMDB_API_KEY ? 'Exists' : 'Missing');
+
+    const { query, tmdbId } = req.body;
     const userId = req.payload._id;
 
-    const searchResponse = await axios.get("https://api.themoviedb.org/3/search/tv", {
-      params: {
-        api_key: process.env.TMDB_API_KEY,
-        query: query,
-        language: "es-ES",
-      },
-    });
-
-    const tmdbSeries = searchResponse.data.results[0];
-    if (!tmdbSeries) {
-      return res.status(404).json({ message: "Serie no encontrada" });
+    if (!tmdbId) {
+      return res.status(400).json({ 
+        message: "Se requiere el ID de TMDB" 
+      });
     }
 
-    let series = await Series.findOne({ tmdbId: tmdbSeries.id, user: userId });
+    // Primero verifica si la serie ya existe
+    let existingSeries = await Series.findOne({ tmdbId, user: userId });
+    if (existingSeries) {
+      return res.json(existingSeries);
+    }
 
-    if (!series) {
-      const detailsResponse = await axios.get(`https://api.themoviedb.org/3/tv/${tmdbSeries.id}`, {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: "es-ES",
-          append_to_response: "credits",
-        },
-      });
+    // Si no existe, obtén los detalles directamente usando tmdbId
+    try {
+      const detailsResponse = await axios.get(
+        `https://api.themoviedb.org/3/tv/${tmdbId}`,
+        {
+          params: {
+            api_key: process.env.TMDB_API_KEY,
+            language: "es-ES",
+            append_to_response: "credits",
+          },
+        }
+      );
 
-      const { credits, backdrop_path, vote_average, number_of_episodes, number_of_seasons } = detailsResponse.data;
+      const seriesData = detailsResponse.data;
+      const { credits, backdrop_path, vote_average, number_of_episodes, number_of_seasons } = seriesData;
 
-      const genreResponse = await axios.get("https://api.themoviedb.org/3/genre/tv/list", {
-        params: {
-          api_key: process.env.TMDB_API_KEY,
-          language: "es-ES",
-        },
-      });
-
-      const genreMap = genreResponse.data.genres.reduce((map, genre) => {
-        map[genre.id] = genre.name;
-        return map;
-      }, {});
-
-      const genres = tmdbSeries.genre_ids.map((id) => genreMap[id]);
-
-      series = new Series({
-        tmdbId: tmdbSeries.id,
-        title: tmdbSeries.name,
-        description: tmdbSeries.overview,
-        startDate: new Date(tmdbSeries.first_air_date),
-        endDate: tmdbSeries.last_air_date ? new Date(tmdbSeries.last_air_date) : null,
-        genre: genres,
-        poster: `https://image.tmdb.org/t/p/w500${tmdbSeries.poster_path}`,
-        backdrop: backdrop_path ? `https://image.tmdb.org/t/p/w1280${backdrop_path}` : null,
+      const newSeries = new Series({
+        tmdbId,
+        title: seriesData.name,
+        description: seriesData.overview,
+        startDate: seriesData.first_air_date ? new Date(seriesData.first_air_date) : null,
+        endDate: seriesData.last_air_date ? new Date(seriesData.last_air_date) : null,
+        genre: seriesData.genres.map(g => g.name),
+        poster: seriesData.poster_path ? 
+          `https://image.tmdb.org/t/p/w500${seriesData.poster_path}` : null,
+        backdrop: backdrop_path ? 
+          `https://image.tmdb.org/t/p/w1280${backdrop_path}` : null,
         rating: vote_average,
         episodes: number_of_episodes,
         seasons: number_of_seasons,
         cast: credits.cast.slice(0, 5).map((actor) => actor.name),
         user: userId,
+        status: 'pending'
       });
 
-      await series.save();
+      await newSeries.save();
+      res.json(newSeries);
+    } catch (tmdbError) {
+      console.error("Error con la API de TMDB:", tmdbError);
+      console.log(tmdbError.response?.data || "No response data available");
+      return res.status(500).json({ 
+        message: "Error obteniendo detalles de la serie de TMDB",
+        error: tmdbError.message 
+      });
     }
-
-    res.json(series);
   } catch (error) {
-    console.error("Error buscando serie:", error);
-    res.status(500).json({ message: "Error buscando serie", error });
+    console.error("Error guardando serie:", error);
+    res.status(500).json({ message: "Error interno del servidor", error: error.message });
   }
 });
 
