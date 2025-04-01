@@ -36,24 +36,30 @@ router.post("/movies/search", isAuthenticated, async (req, res) => {
   try {
     console.log('Request body:', req.body);
     console.log('User ID:', req.payload._id);
-    console.log('TMDB API Key:', process.env.TMDB_API_KEY ? 'Exists' : 'Missing');
 
     const { query, tmdbId } = req.body;
     const userId = req.payload._id;
 
-    if (!query || !tmdbId) {
+    if (!tmdbId) {
       return res.status(400).json({ 
-        message: "Se requieren tanto el título como el ID de TMDB" 
+        message: "Se requiere el ID de TMDB" 
       });
     }
 
-    // Primero verifica si la película ya existe
     let existingMovie = await Movie.findOne({ tmdbId, user: userId });
     if (existingMovie) {
       return res.json(existingMovie);
     }
 
-    // Si no existe, obtén los detalles directamente usando tmdbId
+    const minimalMovie = new Movie({
+      tmdbId,
+      title: query || `Película ID: ${tmdbId}`,
+      user: userId,
+      status: 'pending'
+    });
+    
+    await minimalMovie.save();
+    
     try {
       const detailsResponse = await axios.get(
         `https://api.themoviedb.org/3/movie/${tmdbId}`,
@@ -67,36 +73,50 @@ router.post("/movies/search", isAuthenticated, async (req, res) => {
       );
 
       const movieData = detailsResponse.data;
-      const { credits, backdrop_path, vote_average, runtime } = movieData;
-
-      const newMovie = new Movie({
-        tmdbId,
-        title: movieData.title,
-        description: movieData.overview,
-        releaseDate: new Date(movieData.release_date),
-        genre: movieData.genres.map(g => g.name),
-        poster: movieData.poster_path ? 
-          `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null,
-        backdrop: backdrop_path ? 
-          `https://image.tmdb.org/t/p/w1280${backdrop_path}` : null,
-        rating: vote_average,
-        runtime: runtime,
-        cast: credits.cast.slice(0, 5).map((actor) => actor.name),
-        director: credits.crew.find((member) => member.job === "Director")?.name || null,
-        user: userId,
-        status: 'pending'
-      });
-
-      await newMovie.save();
-      res.json(newMovie);
+      
+      if (movieData) {
+        const updates = {
+          title: movieData.title || minimalMovie.title,
+          description: movieData.overview || minimalMovie.description,
+          releaseDate: movieData.release_date ? new Date(movieData.release_date) : null,
+          poster: movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null,
+          backdrop: movieData.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movieData.backdrop_path}` : null,
+          rating: typeof movieData.vote_average === 'number' ? movieData.vote_average : 0,
+          runtime: typeof movieData.runtime === 'number' ? movieData.runtime : 0,
+        };
+        
+        
+        if (movieData.genres && Array.isArray(movieData.genres)) {
+          updates.genre = movieData.genres.map(g => g.name);
+        }
+        
+        
+        if (movieData.credits && movieData.credits.cast && Array.isArray(movieData.credits.cast)) {
+          updates.cast = movieData.credits.cast.slice(0, 5).map(actor => actor.name || "Actor desconocido");
+        }
+        
+        
+        if (movieData.credits && movieData.credits.crew && Array.isArray(movieData.credits.crew)) {
+          const directorMember = movieData.credits.crew.find(member => member.job === "Director");
+          if (directorMember) {
+            updates.director = directorMember.name;
+          }
+        }
+        
+        const updatedMovie = await Movie.findByIdAndUpdate(
+          minimalMovie._id,
+          updates,
+          { new: true }
+        );
+        
+        return res.json(updatedMovie);
+      }
     } catch (tmdbError) {
       console.error("Error con la API de TMDB:", tmdbError);
-      console.log(tmdbError.response?.data || "No response data available")
-      return res.status(500).json({ 
-        message: "Error obteniendo detalles de la película de TMDB",
-        error: tmdbError.message 
-      });
     }
+    
+    return res.json(minimalMovie);
+    
   } catch (error) {
     console.error("Error guardando película:", error);
     res.status(500).json({ 

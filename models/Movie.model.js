@@ -12,19 +12,19 @@ const movieSchema = new Schema(
     },
     description: {
       type: String,
-      required: true,
+      default: "Sin descripción disponible",
     },
     releaseDate: {
       type: Date,
-      required: true,
+      default: null,
     },
     genre: {
       type: [String],
-      required: true,
+      default: [],
     },
     poster: {
       type: String,
-      required: true,
+      default: null,
     },
     backdrop: {
       type: String,

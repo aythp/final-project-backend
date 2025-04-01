@@ -12,11 +12,11 @@ const seriesSchema = new Schema(
     },
     description: {
       type: String,
-      required: true,
+      default: "Sin descripción disponible",
     },
     startDate: {
       type: Date,
-      required: true,
+      default: null,
     },
     endDate: {
       type: Date,
@@ -24,11 +24,11 @@ const seriesSchema = new Schema(
     },
     genre: {
       type: [String],
-      required: true,
+      default: [],
     },
     poster: {
       type: String,
-      required: true,
+      default: null,
     },
     backdrop: {
       type: String,
@@ -62,7 +62,7 @@ const seriesSchema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
   },
   {
